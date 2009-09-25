@@ -1,0 +1,300 @@
+<?php
+@ignore_user_abort(1);
+@set_time_limit(600);
+include databases_directory.'/database.inc.php';
+
+$PHP_SELF .= '?mod=backup';
+$tables = $strawberry_tables = $another_tables = $struct = array();
+
+if ($action == 'data'){
+    if (!extension_loaded('zlib')){
+        msg('error', t('Ошибка'), t('У вас не установлена библиотека Zlib. Она необходима для сжатия данных. Извините. Попросите хостера поставить это расширение.'));
+    }
+
+    include includes_directory.'/zipbackup.inc.php';
+    $zipfile = new zipfile();
+    list_data_directory(data_directory.'/', 'data/');
+    make_backup('data', $zipfile->file());
+    header('Location: '.$PHP_SELF);
+    exit;
+} elseif ($action == 'database'){
+    if (!extension_loaded('zlib')){
+        msg('error', t('Ошибка'), t('У вас не установлена библиотека Zlib. Она необходима для сжатия данных. Извините. Попросите хостера поставить это расширение.'));
+    }
+
+    if ($_POST['tables']){
+    	foreach ($_POST['tables'] as $table => $value){
+	    	if ($config['dbprefix']){
+	    		$table = preg_replace('/^'.preg_quote($config['dbprefix'], '/').'/', '', $table);
+	    	}
+
+    		$query = $sql->describe(array('table' => $table));
+
+    		foreach ($query as $k => $v){
+    			if ($k != 'primary'){
+    				$struct[$table][$k]['type'] = $v['type'];
+    				$struct[$table][$k]['default'] = ($v['default'] == null ? '' : $v['default']);
+
+                    if ($v['auto_increment']){
+    					$struct[$table][$k]['auto_increment'] = '1';
+    				}
+    			}
+
+    			if ($k == 'primary' and $v){
+    				$struct[$table][$v][$k] = '1';
+    			}
+    		}
+    	}
+
+	    foreach ($_POST['tables'] as $table => $value){
+	    	if ($config['dbprefix']){
+	    		$table = preg_replace('/^'.preg_quote($config['dbprefix'], '/').'/', '', $table);
+	    	}
+
+            $result .= '#'.str_repeat('-', 79)."\r\n";
+            $result .= '# '.$table."\r\n";
+            $result .= '#'.str_repeat('-', 79)."\r\n";
+            $result .= '$sql->droptable(array(\'table\' => \''.$table.'\'));'."\r\n\r\n";
+            $result .= '$sql->createtable(array('."\r\n".'\'table\' => \''.$table.'\','."\r\n".'\'columns\' => ';
+            $result .= var_export($struct[$table], true);
+            $result .= '));'."\r\n\r\n";
+
+	    	if ($query = $sql->select(array('table' => $table))){
+	            foreach ($query as $row){
+	                $result .= '$sql->insert(array('."\r\n".'\'table\' => \''.$table.'\','."\r\n".'\'values\' => ';
+	                $result .= var_export($row, true);
+	                $result .= '));'."\r\n\r\n";
+	            }
+	        }
+	    }
+    }
+
+	$filename = time.'.'.'database.'.$config['database'];
+
+    if (function_exists('gzopen')){
+	    $fp = gzopen(backup_directory.'/'.$filename.'.gz', 'wb9');
+	    gzwrite($fp, $result);
+	    gzclose($fp);
+    } else {
+	    include includes_directory.'/zipbackup.inc.php';
+	    $zipfile = new zipfile();
+	    $zipfile->add_file($result, $filename);
+	    $fp = fopen(backup_directory.'/'.$filename.'.zip', 'wb+');
+	    fwrite($fp, $zipfile->file());
+	    fclose($fp);
+    }
+
+    header('Location: '.$PHP_SELF);
+    exit;
+} elseif ($action == 'download'){
+    download_file($file);
+    //header('Location: '.$PHP_SELF);
+    exit;
+} elseif ($action == 'restore'){
+	$filemame = backup_directory.'/'.$file;
+    $fp = gzopen($filemame, 'rb');
+    $fo = gzread($fp, (filesize($filemame) * 1000));
+    gzclose($fp);
+	eval($fo);
+    header('Location: '.$PHP_SELF);
+    include updates_directory.'/update.inc.php';
+} elseif ($action == 'delete'){
+    unlink(backup_directory.'/'.$file);
+    header('Location: '.$PHP_SELF);
+    exit;
+} elseif ($action == 'send'){
+    cute_mail($config['admin_mail'], $config['home_title'].' backup ('.$file.')', $config['home_title'].' backup ('.$file.')', backup_directory.'/'.$file);
+    header('Location: '.$PHP_SELF);
+    exit;
+}
+
+if ($config['database'] == 'mysql'){
+    $link = mysql_connect($config['dbserver'], $config['dbuser'], $config['dbpassword']);
+    $list = mysql_list_tables($config['dbname'], $link);
+
+    for ($i = 0; $i < mysql_num_rows($list); $i++){
+    	$tables[] = mysql_tablename($list, $i);
+    }
+
+    mysql_close($link);
+} elseif ($config['database'] == 'txtsql'){
+    $handle = opendir(data_directory.'/db/base');
+    while ($file = readdir($handle)){
+        if (substr($file, -3) == 'FRM'){
+            $tables[] = substr($file, 0, -4);
+        }
+    }
+}
+
+foreach ($tables as $k => $v){
+	if (!in_array($v, $database) and $config['dbprefix'] and substr($v, 0, strlen($config['dbprefix'])) != $config['dbprefix']){
+		$another_tables[] = $v;
+	} else {
+		$strawberry_tables[] = $v;
+	}
+}
+
+unset($database);
+echoheader('options', t('Резервное копирование'));
+?>
+
+<ul style="margin-left: 15px;">
+<li><a href="<?=$PHP_SELF; ?>&action=data"><?=t('Создать бэкап директории data'); ?></a>
+<li><a href="javascript:ShowOrHide('tables');"><?=t('Создать бэкап базы данных'); ?></a>
+<form action="<?=$PHP_SELF; ?>&action=database" method="post">
+<div style="display: none;" id="tables">
+<? foreach ($strawberry_tables as $table){ ?>
+<label for="<?=$table; ?>">
+<input name="tables[<?=$table; ?>]" id="<?=$table; ?>" type="checkbox" value="on" checked>&nbsp;<?=$table; ?>
+</label><br />
+<? } ?>
+
+<? foreach ($another_tables as $table){ ?>
+<label for="<?=$table; ?>">
+<input name="tables[<?=$table; ?>]" id="<?=$table; ?>" type="checkbox" value="on"<?=($config['database'] == 'txtsql' ? ' checked' : ''); ?>>&nbsp;<?=$table; ?>
+</label><br />
+<? } ?>
+<br />
+<?=t('Если у вас текстовая версия базы (txtSQL) скрипт выбирет все таблицы, ибо гложет сомнения меня, что кто-то ещё будет писать в базу Strawberry. Если же у вас версия с MySQL, то скрипт сравнит префиксы, коли он (префикс) не был указан, то вам придётся самостоятельно довыбрать таблицы. Вот такие вот кошмары.', array('prifix' => $config['dbprefix'])); ?>
+<br /><br />
+<input type="submit" value="<?=t('Гашетку в пол, мон шери'); ?>">
+</div>
+</form>
+</ul>
+
+<? list_backup_directory(); ?>
+
+<table width="600" border="0" cellspacing="0" cellpadding="0">
+ <tr>
+  <td width="220" class="panel"><b><?=t('Бэкапы папки data'); ?></b></td>
+  <td width="60">&nbsp;</td>
+  <td width="220" class="panel"><b><?=t('Бэкапы базы данных'); ?></b></td>
+ </tr>
+ <tr>
+  <td valign="top">
+   <ul style="margin: 0px;"><?=($data ? $data : t('Нет ни одного')); ?></ul>
+  </td>
+  <td>&nbsp;</td>
+  <td valign="top">
+   <ul style="margin: 0px;"><?=($database ? $database : t('Нет ни одного')); ?></ul>
+  </td>
+ </tr>
+</table>
+
+<?
+echofooter();
+
+function make_backup($filename, $zip){
+
+	$filename = time.'.'.$filename.'.gz';
+	file_write(backup_directory.'/'.$filename, $zip);
+    //$fp = gzopen(backup_directory.'/'.$filename, 'wb9');
+    //gzwrite($fp, $zip);
+    //gzclose($fp);
+}
+
+function list_data_directory($dir, $to){
+global $zipfile;
+
+    $fdir = opendir($dir);
+    while ($file = readdir($fdir)){
+        if ($file != '.' and $file != '..'){
+            if (is_file($dir.$file)){
+                $zipfile->add_file(file_get_contents($dir.$file), $to.$file);
+            }
+
+            if (is_dir($dir.$file) and $to.$file != 'data/db/base'){
+                list_data_directory($dir.$file.'/', $to.$file.'/');
+            }
+        }
+    }
+}
+
+function list_backup_directory(){
+global $data, $database, $PHP_SELF, $config;
+
+    $fdir = opendir(backup_directory);
+    while ($file = readdir($fdir)){
+        if ($file != '.' and $file != '..'){
+            $file_arr = explode('.', $file);
+            $files[$file_arr[0]] = $file;
+        }
+    }
+
+    if ($files){
+    	asort($files);
+
+    	foreach ($files as $file){
+    		$file_arr = explode('.', $file);
+
+	        if ($file_arr[1] == 'data'){
+	            $data .= '<a href="javascript:ShowOrHide(\''.$file.'\', \''.$file.'-plus\')" id="'.$file.'-plus" onclick="javascript:ShowOrHide(\''.$file.'-minus\')">+</a><a href="javascript:ShowOrHide(\''.$file.'\', \''.$file.'-minus\')" id="'.$file.'-minus" style="display: none;" onclick="javascript:ShowOrHide(\''.$file.'-plus\')">-</a> ';
+	            $data .= langdate('d M Y H:i:s', $file_arr[0]).'<br />';
+	            $data .= '<ul id="'.$file.'" style="display: none;">';
+	            $data .= '<li><a href="'.$PHP_SELF.'&action=download&file='.$file.'">'.t('скачать').'</a>';
+	            $data .= ($config['admin_mail'] ? '<li><a href="'.$PHP_SELF.'&action=send&file='.$file.'">'.t('послать на e-mail (%mail)', array('mail' => $config['admin_mail'])).'</a>' : '');
+	            //$data .= '<li><a href="'.$PHP_SELF.'&action=restore&file='.$file.'">'.t('восстановить').'</a>';
+	            //$data .= '<li>'.t('восстановить');
+	            $data .= '<li><a href="'.$PHP_SELF.'&action=delete&file='.$file.'">'.t('удалить').'</a>';
+	            $data .= '</ul>';
+	        }
+
+	        if ($file_arr[1] == 'database'){
+	            $database .= ' <a href="javascript:ShowOrHide(\''.$file.'\', \''.$file.'-plus\')" id="'.$file.'-plus" onclick="javascript:ShowOrHide(\''.$file.'-minus\')">+</a><a href="javascript:ShowOrHide(\''.$file.'\', \''.$file.'-minus\')" id="'.$file.'-minus" style="display: none;" onclick="javascript:ShowOrHide(\''.$file.'-plus\')">-</a> ';
+	            $database .= langdate('d M Y H:i:s', $file_arr[0]);
+	            $database .= ' ('.($file_arr[2] == 'txtsql' ? 'txtSQL' : 'MySQL').')<br />';
+	            $database .= '<ul id="'.$file.'" style="display: none;">';
+	            $database .= '<li><a href="'.$PHP_SELF.'&action=download&file='.$file.'">'.t('скачать').'</a>';
+	            $database .= ($config['admin_mail'] ? '<li><a href="'.$PHP_SELF.'&action=send&file='.$file.'">'.t('послать на e-mail (%mail)', array('mail' => $config['admin_mail'])).'</a>' : '');
+	            $database .= '<li><a href="'.$PHP_SELF.'&action=restore&file='.$file.'">'.t('восстановить').'</a>';
+	            $database .= '<li><a href="'.$PHP_SELF.'&action=delete&file='.$file.'">'.t('удалить').'</a>';
+	            $database .= '</ul>';
+	        }
+        }
+    }
+}
+
+function download_file($file){
+
+	$filename = $file;
+    $file     = backup_directory.'/'.$file;
+    $fd       = fopen($file, 'rb');
+
+    if ($_SERVER['HTTP_RANGE']){
+        $range = $_SERVER['HTTP_RANGE'];
+        $range = str_replace('bytes=', '', $range);
+        $range = str_replace('-', '', $range);
+
+        if ($range){
+            fseek($fd, $range);
+        }
+    }
+
+    if ($range){
+      header('HTTP/1.1 206 Partial Content');
+    } else {
+      header('HTTP/1.1 200 OK');
+    }
+
+    header('Date: '.date('D, d M Y H:i:s', time).' GMT');
+    header('X-Powered-By: PHP/'.phpversion());
+    header('Expires: Thu, 19 Nov 1981 08:52:00 GMT');
+    header('Last-Modified: '.date('D, d M Y H:i:s', filemtime($file)).' GMT');
+    header('Cache-Control: None');
+    header('Pragma: no-cache');
+    header('Accept-Ranges: bytes');
+    header('Content-type: application/octet-stream');
+    header('Content-disposition: attachment; filename='.$filename);
+    header('Content-Length: '.(filesize($file) - $range));
+    header('Content-Range: bytes '.$range.'-'.(filesize($file) - 1).'/'.filesize($file));
+    header('Proxy-Connection: close');
+    header('');
+
+    while (!feof($fd) and (connection_status() == 0)){
+        $contents = fread($fd, 8192);
+        echo $contents;
+    }
+
+    fclose($fd);
+}
+?>

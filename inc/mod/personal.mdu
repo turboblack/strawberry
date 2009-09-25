@@ -1,0 +1,177 @@
+<?php
+// ********************************************************************************
+// Personal Options
+// ********************************************************************************
+if (!$action){
+    echoheader('user', t('Личные настройки'));
+
+    foreach ($member as $key => $value){
+         $member[$key] = stripslashes(str_replace(array('"', '\''), array('&quot;', '&#039;'), $member[$key]));
+    }
+
+	if ($config['user_avatar']){
+	    if ($member['avatar']){
+	    	$member['avatar'] = '<img src="'.$config['path_userpic_upload'].'/'.$member['username'].'.'.$member['avatar'].'" style="margin: 5px; border: 0px;">';
+	    	$delava = '<input type="checkbox" name="delavatar" id="delavatar">&nbsp;<label for="delavatar">'.t('Удалить аватар?').'</label>';
+	    } else {
+	        unset($member['avatar'], $delava);
+	    }
+
+	    $showrow_avatar = '<tr '.cute_that().'><td height="21">&nbsp;&nbsp;'.t('Аватар').':<td height="21"><input type="hidden" name="max_file_size" value="110000"><input tabindex="6" name="newavatar" type="file" size="27"></td><td>'.$delava;
+     } else {
+     	 unset($member['avatar']);
+     }
+?>
+
+<table border="0" height="1" width="100%" cellspacing="0" cellpadding="0">
+<form method="post" action="<?=$PHP_SELF; ?>" name="personal" enctype="multipart/form-data">
+ <tr>
+  <td colspan="2" style="padding-bottom: 10px;"><b><?=t('Общие данные'); ?></b>
+ <tr <?=cute_that(); ?>>
+  <td height="21">&nbsp;&nbsp;<?=t('Ник'); ?>
+  <td height="21" width="400" colspan="2"><input type="hidden" name="editusername" value="<?=$member['username']; ?>"><?=$member['username']; ?>
+ <tr <?=cute_that(); ?>>
+  <td height="21" width="150">&nbsp;&nbsp;<?=t('Дата регистрации'); ?>
+  <td height="21" width="400" colspan="2"><?=langdate('l, j M Y - h:i', $member['date']); ?>
+ <tr <?=cute_that(); ?>>
+  <td height="21">&nbsp;&nbsp;<?=t('Группа'); ?>
+  <td height="21" width="400" colspan="2"><?=$usergroups[$member['usergroup']]['name']; ?>
+<tr <?=cute_that(); ?>>
+ <td height="21" width="150">&nbsp;&nbsp;<?=t('Публикаций'); ?>
+ <td height="21" width="400" colspan="2"><?=$member['publications']; ?>
+<tr>
+ <td colspan="2" style="padding-top: 10px;padding-bottom: 10px;"><b><?=t('Ваш профиль'); ?></b>
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Новый пароль'); ?>
+ <td height="21" width="400" colspan="2"><input name="editpassword">&nbsp;&nbsp;&nbsp;<?=t('если хотите изменить текущий'); ?>
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Имя'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editnickname" value="<?=$member['name']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('E-mail'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editmail" value="<?=$member['mail']; ?>">&nbsp;&nbsp;&nbsp;<input type="checkbox" name="edithidemail" <?=($member['hide_mail'] ? 'checked' : ''); ?> id="edithidemail">&nbsp;<label for="edithidemail"><?=t('спрятать адрес'); ?></label>
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Сайт'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editsite" value="<?=$member['homepage']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('ICQ'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editicq" value="<?=$member['icq']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Аккаунт в ЖЖ'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editlj" value="<?=$member['lj_username']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Пароль от ЖЖ'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editljpass" value="<?=$member['lj_password']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('Откуда'); ?>
+ <td height="21" width="400" colspan="2"><input type="text" name="editfrom" value="<?=$member['location']; ?>">
+<tr <?=cute_that(); ?>>
+ <td height="21">&nbsp;&nbsp;<?=t('О себе'); ?>
+ <td height="21"><textarea type="text" name="editabout" style="width: 300px; height: 120px; padding: 5px; overflow-x: hidden; overflow-y: visible; "><?=str_replace('<br />', "\n", $member['about']); ?></textarea><?=$member['avatar']; ?>
+ <td width="200" align="left">&nbsp;
+<?=$showrow_avatar; ?>
+<tr>
+ <td height="1" colspan="2" colspan="3"><br />
+  <input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">
+  <input type="hidden" name="mod" value="personal">
+  <input type="hidden" name="action" value="dosavepersonal">
+</form>
+</table>
+
+<?
+	echofooter();
+}
+
+// ********************************************************************************
+// Save Personal Options
+// ********************************************************************************
+if ($action == 'dosavepersonal'){
+	foreach ($sql->select(array('table' => 'users', 'where' => array("id != $member[id]"))) as $row){
+		if ($editnickname and strtolower($row['name']) == strtolower($editnickname)){
+			msg('error', t('Ошибка'), t('Такое имя уже кто-то использует'), $PHP_SELF.'?mod=personal');
+		} elseif ($editmail and strtolower($row['mail']) == strtolower($editmail)){
+			msg('error', t('Ошибка'), t('Такой e-mail уже кто-то использует'), $PHP_SELF.'?mod=personal');
+		}
+	}
+
+	$userpic_folder = cute_parse_url($config['path_userpic_upload']);
+	$userpic_folder = $userpic_folder['abs'];
+
+    if (!is_dir($userpic_folder)){
+    	@mkdir($userpic_folder, 0777);
+    	@chmod($userpic_folder, 0777);
+    }
+
+    if ($delavatar){
+    	unset($change_avatar);
+    	@unlink($userpic_folder.'/'.$member['username'].'.'.$member['avatar']);
+    } else {
+    	$change_avatar = $member['avatar'];
+    }
+
+    if ($editljpass){
+    	$editljpass = $editljpass;
+    } else {
+    	$editljpass = $member['lj_password'];
+    }
+
+    if ($_FILES and !$_FILES['newavatar']['error']){
+	    // Загружаем файл(ы)
+	    $avatarname = $_FILES['newavatar']['name'];
+	    $avatartemp = $_FILES['newavatar']['tmp_name'];
+	    $type       = end($type = explode('.', $avatarname));
+
+	    // Проверяем картинку или фигню какую-то пытается закачать юзер
+	    if (!in_array($type, $allowed_extensions) or !in_array(strtolower($type), $allowed_extensions)){
+	        @unlink($userpic_folder.'/'.$avatarname);
+
+	        $change_avatar = $member['avatar'];
+	        $avatar_error  = t(', но аватар не загружен!<br />Загрузка таких типов файлов запрещена');
+	    } else {
+	        @unlink($userpic_folder.'/'.$member['username'].'.'.$member['avatar']);
+	        @move_uploaded_file($avatartemp, $userpic_folder.'/'.$avatarname);
+
+	        $size = @getimagesize($userpic_folder.'/'.$avatarname);
+
+	        // Проверяем размеры загружаемой картинки
+	        if (($size[0] > $config['avatar_w']) and ($size[1] > $config['avatar_h'])){
+	            $avatar_error  = t(', но аватар не загружен!<br />Размеры картинки должны быть').' '.$config['avatar_w'].'x'.$config['avatar_h'];
+	            $change_avatar = $member['avatar'];
+	            @unlink($userpic_folder.'/'.$avatarname);
+	        } else {
+	            $change_avatar = @rename($userpic_folder.'/'.$avatarname, $userpic_folder.'/'.$member['username'].'.'.$type);
+	            $change_avatar = $type;
+	        }
+	    }
+    }
+
+    foreach ($sql->select(array('table' => 'users', 'where' => array("id = $member[id]"))) as $row){
+        if ($editpassword){
+            $row['password'] = md5x($editpassword);
+            $_SESSION['md5_password'] = $row['password'];
+
+            cute_setcookie('md5_password', $row['password']);
+        }
+    }
+
+    $sql->update(array(
+    'table'  => 'users',
+    'where'  => array("id = $member[id]"),
+    'values' => array(
+                'password'    => $row['password'],
+                'name'        => replace_comment('add', $editnickname),
+                'mail'        => $editmail,
+                'hide_mail'   => ($edithidemail ? true : false),
+                'avatar'      => $change_avatar,
+                'homepage'    => replace_comment('add', $editsite),
+                'icq'         => replace_comment('add', $editicq),
+                'location'    => replace_comment('add', $editfrom),
+                'about'       => replace_comment('add', $editabout),
+                'lj_username' => replace_comment('add', $editlj),
+                'lj_password' => $editljpass,
+                )
+    ));
+
+	msg('info', t('Изменения сохранены'), t('Ваша персональная информация была успешно сохранена').$avatar_error, $PHP_SELF.'?mod=personal');
+}
+?>

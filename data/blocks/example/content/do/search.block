@@ -1,0 +1,9 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим поиск (аддон)
+// show search (add-on)
+$number = 12;
+include rootpath.'/show_search.php';
+?>

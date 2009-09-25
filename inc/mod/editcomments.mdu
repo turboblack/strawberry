@@ -1,0 +1,264 @@
+<?php
+if (!$newsid and !$comid){
+?>
+
+<form method="post" name="comments" action="<?=$PHP_SELF; ?>">
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<? foreach ($sql->select(array('table' => 'comments', 'where' => array("post_id = $id"), 'orderby' => array('date', 'ASC'))) as $k => $row){ ?>
+<tr style="padding: 3px;">
+ <td><a href="#" title="<?=t('Дата').': '.langdate('d M Y H:i', $row['date'])."\nIP: $row[ip]\n".t('Автор').": $row[author]\nE-mail: $row[mail]\n".t('Комментарий').": $row[comment]\n".t('Ответ').": $row[reply]"; ?>" onclick="window.open('<?=$PHP_SELF; ?>?mod=editcomments&amp;newsid=<?=$id; ?>&amp;comid=<?=$row['id']; ?>', '_Comments', 'height=420,resizable=yes,scrollbars=yes,width=410');return false;">#<?=($k + 1).' '.$row['author']; ?></a>
+ <td><input type="checkbox" name="delcomid[]" value="<?=$row['id']; ?>">
+<? } ?>
+<tr style="padding: 3px;">
+ <td><input type="submit" value="<?=t('Удалить'); ?>">
+ <td><input type="checkbox" name="master_box" title="<?=t('Выбрать все'); ?>" onclick="javascript:ckeck_uncheck_all('comments')">
+</table>
+
+<input type="hidden" name="newsid" value="<?=$id; ?>">
+<input type="hidden" name="deletecomment" value="yes">
+<input type="hidden" name="action" value="dodeletecomment">
+<input type="hidden" name="mod" value="editcomments">
+</form>
+
+<?
+	return;
+}
+
+$right = false;
+$is_user = '';
+
+if (cute_get_rights('edit') and $sql->select(array('table' => 'news', 'where' => array("author = $member[username]", 'and', "id = $newsid")))){
+	$right = true;
+}
+
+if (cute_get_rights('edit') and $sql->select(array('table' => 'comments', 'where' => array("author = $member[username]", 'and', "id = $comid")))){
+	$right = true;;
+}
+
+if (cute_get_rights('edit_all')){
+	$right = true;
+}
+
+if (!$right){
+	exit('Sorry, you sux');
+}
+
+function comments_get_children($array, $id = 0){
+static $result;
+
+    foreach ((array)$array as $row){
+        if ($row['parent'] == $id){
+            $result[] = $row['id'];
+            comments_get_children($array, $row['id']);
+        }
+    }
+
+return ($result ? $result : array());
+}
+
+// ********************************************************************************
+// Edit Comment
+// ********************************************************************************
+if (!$action or $action == 'editcomment'){
+	foreach ($sql->select(array('table' => 'comments', 'where' => array("id = $comid"))) as $row){
+		if ($row['user_id']){
+			$row['mail']     = $users[$row['author']]['mail'];
+			$row['homepage'] = $users[$row['author']]['homepage'];
+			$row['author']   = $users[$row['author']]['name'];
+			$is_user     = ' disabled';
+		}
+?>
+
+<script type="text/javascript" src="skins/cute.js"></script>
+
+<style>
+<!--
+body {
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 8pt;
+}
+textarea {
+	width: 100%;
+	height: 100px;
+	overflow-x: hidden;
+	overflow-y: visible;
+	padding: 5px;
+}
+
+legend {
+	color: #000;
+	width: 100%;
+	font-size: 12px;
+	font-weight: bold;
+	border-bottom: solid 1px #ccc;
+	padding-bottom: 5px;
+	padding-left: 5px;
+	margin-bottom: 5px;
+}
+
+fieldset {
+	border: none 1px #ccc;
+	padding-bottom: 10px;
+	padding-left: 7px;
+	padding-right: 7px;
+}
+#tooltip {
+	background: #fff;
+	border: 1px solid #000;
+	color: #000;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	margin: 0px;
+	padding: 2px 2px;
+	position: absolute;
+	visibility: hidden;
+}
+-->
+</style>
+
+<form method="post" name="addnews" action="<?=$PHP_SELF; ?>" onsubmit="return process_form(this)">
+
+<fieldset><legend><?=t('Комментарий'); ?></legend>
+<input type="text" value="<?=langdate('d M Y H:i', $row['date']); ?>" disabled><br />
+<input type="hidden" name="date" value="<?=$row['date']; ?>">
+<input type="text" name="poster" value="<?=$row['author']; ?>"<?=$is_user; ?>><br />
+<input type="text" name="mail" value="<?=$row['mail']; ?>"<?=$is_user; ?>><br />
+<input type="text" name="homepage" value="<?=$row['homepage']; ?>"<?=$is_user; ?>><br />
+<input type="text" name="ip" value="<?=$row['ip']; ?>" disabled>&nbsp;<a href="http://foobar.ru/ipwhois.php?ip=<?=$row['ip']; ?>&c=ripe" target="_blank" title="<?=t('Получить информацию об этом IP'); ?>">[?]</a><br />
+<?=insertSmilies('comment', 0); ?><br />
+<textarea name="comment"><?=replace_comment('admin', $row['comment']); ?></textarea>
+</fieldset>
+
+<fieldset><legend><?=t('Ответ'); ?></legend>
+<?
+
+		if (preg_match("/^[\.A-z0-9_\-]+[@][A-z0-9_\-]+([.][A-z0-9_\-]+)+[A-z]{1,4}$/", $row['mail'])){
+?>
+
+<label for="reply_to_mail"><input id="reply_to_mail" name="reply_to_mail" type="checkbox" value="on" checked>&nbsp;<?=t('Отослать ответ?'); ?></label><br />
+
+<?
+		}
+?>
+
+<?=insertSmilies('reply', 0); ?><br />
+<textarea name="reply"><?=replace_comment('admin', $row['reply']); ?></textarea>
+</fieldset>
+
+<fieldset><legend><?=t('Действие'); ?></legend>
+<input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">&nbsp;
+<input type="button" onclick="javascript:confirmDelete('?mod=editcomments&amp;action=dodeletecomment&amp;newsid=<?=$newsid; ?>&amp;delcomid[]=<?=$comid; ?>&amp;deletecomment=yes')" value="<?=t('Удалить'); ?>" accesskey="d">
+<input type="button" value="<?=t('Отмена'); ?>" onClick="window.close();" accesskey="c">
+</fieldset>
+
+<input type="hidden" name="mod" value="editcomments">
+<input type="hidden" name="newsid" value="<?=$newsid; ?>">
+<input type="hidden" name="comid" value="<?=$comid; ?>">
+<input type="hidden" name="is_user" value="<?=($is_user ? '1' : ''); ?>">
+<input type="hidden" name="action" value="doeditcomment">
+</form>
+
+<?
+	}
+}
+
+// ********************************************************************************
+// Do Delete Comment
+// ********************************************************************************
+if ($action == 'dodeletecomment' and $deletecomment == 'yes'){
+    if ($delcomid == 'all' and (cute_get_rights('delete') and $sql->select(array('table' => 'news', 'where' => array("author = $member[username]", 'and', "id = $newsid"))) or cute_get_rights('delete_all'))){
+	    $sql->delete(array(
+	    'table' => 'comments',
+	    'where' => array("post_id = $newsid")
+	    ));
+
+	    msg('info', t('Комментарии удалены'), t('Все комментарии были успешно удалены.'), $PHP_SELF.'?mod=editnews&amp;id='.$newsid);
+    } else {
+    	$it_post_author = $sql->select(array('table' => 'news', 'where' => array("author = $member[username]", 'and', "id = $newsid")));
+
+    	foreach ($delcomid as $aloncomment){
+    		$it_comment_author = $sql->count(array('table' => 'comments', 'where' => array("author = $member[username]", 'and', "id = $aloncomment")));
+
+	        if (cute_get_rights('delete_all') or (cute_get_rights('delete') and ($it_comment_author or $it_post_author))){
+	        	$query = $sql->select(array('table' => 'comments', 'where' => array("post_id = $newsid")));
+
+	            foreach (comments_get_children($query, $aloncomment) as $children){
+	                $sql->delete(array(
+	                'table' => 'comments',
+	                'where' => array("id = $children")
+	                ));
+	            }
+
+	            $sql->delete(array(
+	            'table' => 'comments',
+	            'where' => array("id = $aloncomment")
+	            ));
+
+	            $sql->update(array(
+	            'table'  => 'news',
+	            'where'  => array("id = $newsid"),
+	            'values' => array('comments' => $sql->count(array('table' => 'comments', 'where' => array("post_id = $newsid"))))
+	            ));
+	    	}
+	    }
+
+	    msg('info', t('Комментарий удален'), t('Выбранный комментарий был успешно удален.'), $PHP_SELF.'?mod=editnews&amp;id='.$newsid);
+    }
+}
+
+// ********************************************************************************
+// Do Save Comment
+// ********************************************************************************
+if ($action == 'doeditcomment'){
+    $values = array('comment' => replace_comment('add', $comment), 'reply' => replace_comment('add', $reply));
+
+	if (!$_POST['is_user']){
+	    $values['author']   = $poster;
+	    $values['mail']     = $mail;
+	    $values['homepage'] = $homepage;
+	}
+
+	$sql->update(array(
+	'table'  => 'comments',
+	'where'  => array("id = $comid"),
+	'values' => $values
+	));
+?>
+
+<br /><br /><br /><br /><center><b><?=t('Комментарий сохранён.'); ?>
+
+<?
+    if ($reply_to_mail == 'on'){
+        $comment  = str_replace('<br />', "\n", $comment);
+        $comment  = str_replace("\n", "\n$poster> ", $comment);
+        $reply   = str_replace('<br />', "\n", $reply);
+
+        foreach ($sql->select(array('table' => 'news', 'where' => array("id = $newsid"))) as $row){
+	        ob_start();
+	        include mails_directory.'/admin_reply.tpl';
+	        $tpl['body'] = ob_get_clean();
+
+	        preg_match('/Subject:(.*)/i', $tpl['body'], $tpl['subject']);
+	        preg_match('/Attachment:(.*)/i', $tpl['body'], $tpl['attachment']);
+
+	        $tpl['body']       = preg_replace('/Subject:(.*)/i', '', $tpl['body']);
+	        $tpl['body']       = preg_replace('/Attachment:(.*)/i', '', $tpl['body']);
+	        $tpl['body']       = trim($tpl['body']);
+	        $tpl['subject']    = trim($tpl['subject'][1]);
+	        $tpl['attachment'] = trim($tpl['attachment'][1]);
+
+	        cute_mail($poster.' <'.$mail.'>', $tpl['subject'], $tpl['body'], $tpl['attachment']);
+        }
+?>
+
+<br /><br /><?=t('И ответ был отослан.'); ?>
+
+<?
+    }
+?>
+
+<br /><br /><a href="#" onClick="window.close();"><?=t('Закрыть окно'); ?></a>
+
+<?
+}
+?>

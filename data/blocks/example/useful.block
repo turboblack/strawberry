@@ -1,0 +1,11 @@
+<!-- полезные ссылки -->
+
+<b>Полезно</b>
+<ul>
+<li><a href="<?=$config['http_script_dir'] ;?>">Админка</a></li>
+<? if (cute_get_rights('ddb', 'read')){ ?>
+<li><a href="?ddb=edit">Редактировать блоки</a></li>
+<li><a href="?ddb=html">Смотреть html</a></li>
+<? } ?>
+<li><a href="<?=$config['http_script_dir'] ;?>/docs">Документация</a></li>
+</ul>

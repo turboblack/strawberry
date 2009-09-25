@@ -1,0 +1,36 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+if ($do == 'search'){
+ // выводим поиск (аддон)
+ // show search (add-on)
+ $number = 12;
+ include rootpath.'/show_search.php';
+} elseif ($do == 'users'){
+ // выводим список юзерей (аддон)
+ // show list of the users (add-on)
+ include rootpath.'/show_users.php';
+} elseif ($do == 'category'){
+ // выводим список категорий (плагин CN Functions)
+ // show list of the categories (plugin CN Functions)
+ echo cn_category();
+} elseif ($do == 'keywords'){
+ // выводим список кейвордов (плагин Keywords)
+ // show list of the keywords (plugin Keywords)
+ echo cn_keywords();
+} elseif ($do == 'archives'){
+ // выводим список архивов (плагин CN Functions)
+ // show list of the archives (plugin CN Functions)
+ echo cn_archives();
+} elseif ($do == 'registration'){
+ // выводим список архивов (плагин User.Registration)
+ // show list of the archives (plugin User.Registration)
+ echo regForm('default');
+} else {
+ // выводим семь последних новостей
+ // show seven last news
+ $number = 7;
+ include rootpath.'/show_news.php';
+}
+?>

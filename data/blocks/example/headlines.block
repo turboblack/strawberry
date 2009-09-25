@@ -1,0 +1,7 @@
+<!-- экспортируем заголовки со своего сайта себе же на сайт :) -->
+<!-- для примера, конечно -->
+
+<b>Экспорт заголовков</b>
+<ul>
+<script language="javascript" src="<?=$config['http_script_dir']; ?>/remote_headlines.php"></script>
+</ul>

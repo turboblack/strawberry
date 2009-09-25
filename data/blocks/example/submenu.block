@@ -1,0 +1,9 @@
+<!-- это подменю строится из "детей" открытой категории -->
+<!-- у нас на сайте (http://strawberry.goodgirl.ru) главное меню это категории, логично предположить, что и вы ими воспользуетесь -->
+<!-- это подменю выводит всех "детей" открытой категории" -->
+
+<? if ($_GET['category'] and $category_list = cn_category('-&nbsp;', '<a href="[php]cute_get_link($row, category)[/php]">{name} ([php]count_category_entry({id})[/php])</a><br />', true, category_get_id($_GET['category']))){ ?>
+<b>Подкатегории "<?=$categories[category_get_id($_GET['category'])]['name']; ?>":</b><br />
+<?=$category_list; ?>
+<br />
+<? } ?>

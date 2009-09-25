@@ -1,0 +1,10 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим семь последних новостей
+// show seven last news
+$number = 7;
+$is_main = true;
+include rootpath.'/show_news.php';
+?>

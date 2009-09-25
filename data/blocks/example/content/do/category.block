@@ -1,0 +1,8 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим список категорий (плагин CN Functions)
+// show list of the categories (plugin CN Functions)
+echo cn_category('&nbsp;');
+?>

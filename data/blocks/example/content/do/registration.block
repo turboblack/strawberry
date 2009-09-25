@@ -1,0 +1,8 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим форму регистрации (плагин User.Registration)
+// show registration form (plugin User.Registration)
+echo regForm('default');
+?>

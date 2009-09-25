@@ -1,0 +1,8 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим список архивов (плагин CN Functions)
+// show list of the archives (plugin CN Functions)
+echo cn_archives();
+?>

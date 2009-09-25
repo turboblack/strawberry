@@ -1,0 +1,25 @@
+<!-- заголовки, ссылки на RSS для браузеров, подключаем CSS -->
+
+<title><?=cn_title(' &laquo; ', true); ?></title>
+
+<meta http-equiv="Content-type" content="text/html; charset=windows-1251">
+
+<meta http-equiv="Content-language" content="ru">
+
+<link href="ссылка на RSS" rel="alternate" type="application/rss+xml" title="RSS">
+
+<? if ($post){ ?>
+<link href="<?=cute_get_link($post, 'post', 'rss.php'); ?>" rel="alternate" type="application/rss+xml" title="Comments">
+<? } ?>
+
+<link href="style.css" rel="stylesheet" type="text/css" media="screen">
+
+<link href="<?=$config['http_script_dir']; ?>/plugins/wacko/css/highlighter.css" rel="stylesheet" type="text/css" media="screen">
+
+<style>
+<!--
+#<?=($do ? $do : 'main'); ?> {
+ background: #fff;
+}
+-->
+</style>

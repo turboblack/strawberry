@@ -1,0 +1,35 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+<b>Архив:</b>
+
+<?
+if (!$categories){
+  return;
+}
+
+// кэширование
+if (!$map = $cache->get('map', $cache_uniq, 'block')){
+ ob_start();
+
+ $query = $sql->select(array('table' => 'news'));
+?>
+
+<p><b>Заметки по темам:</b></p>
+<p><?=chicken_dick(category_get_tree('', '<a href="#{url}">{name}</a> | '), ' | '); ?></p>
+
+<? foreach ($categories as $cat){ ?>
+ <a name="<?=$cat['url']; ?>"></a>
+ <p>Заметки по теме "<b><?=$cat['name']; ?></b>":</p>
+  <? foreach ($query as $news){ ?>
+    <? if (in_array($cat['id'], explode(',', $news['category']))){ ?>
+      <a href="<?=cute_get_link($news); ?>"><?=$news['title']; ?></a><br />
+    <? } ?>
+  <? } ?>
+<? } ?>
+
+<?
+ $map = $cache->put(ob_get_clean());
+}
+
+echo $map;
+?>

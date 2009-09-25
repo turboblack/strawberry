@@ -1,0 +1,224 @@
+<?php
+// ********************************************************************************
+// System Configuration
+// ********************************************************************************
+
+if (!$action){
+    echoheader('options', t('Настройки системы'));
+
+	$sys_con_gmtoffset_arr = array('-720' => 'GMT -12:00', '-660' => 'GMT -11:00', '-600' => 'GMT -10:00', '-570' => 'GMT -9:30', '-540' => 'GMT -9:00', '-510' => 'GMT -8:30', '-480' => 'GMT -8:00', '-420' => 'GMT -7:00', '-360' => 'GMT -6:00', '-300' => 'GMT -5:00', '-240' => 'GMT -4:00', '-210' => 'GMT -3:30', '-180' => 'GMT -3:00', '-120' => 'GMT -2:00', '-60' => 'GMT -1:00', '0' => 'GMT +00:00', '60' => 'GMT +01:00', '120' => 'GMT +02:00', '180' => 'GMT +03:00', '210' => 'GMT +03:30', '240' => 'GMT +04:00', '270' => 'GMT +04:30', '300' => 'GMT +05:00', '330' => 'GMT +05:30', '360' => 'GMT +06:00', '390' => 'GMT +06:30', '420' => 'GMT +07:00', '480' => 'GMT +08:00', '540' => 'GMT +09:00', '570' => 'GMT +09:30', '600' => 'GMT +10:00', '630' => 'GMT +10:30', '660' => 'GMT +11:00', '690' => 'GMT +11:30', '720' => 'GMT +12:00', '780' => 'GMT +13:00', '840' => 'GMT +14:00');
+	$sys_con_charset_arr   = array('X-MAC-ARABIC' => 'Arabic (Macintosh)', 'windows-1256' => 'Arabic (Windows)', 'iso-8859-2' => 'Central European (ISO-8859-2)', 'X-MAC-CENTRALEURROMAN' => 'Central European (MacCE)', 'windows-1250' => 'Central European (Windows-1250)', 'iso-8859-5' => 'Cyrillic (ISO-8859-5)', 'KOI8-R' => 'Cyrillic (KOI8-R)', 'x-mac-cyrillic' => 'Cyrillic (MacCyrillic)', 'windows-1251' => 'Cyrillic (Windows-1251)', 'iso-8859-7' => 'Greek (ISO-8859-7)', 'x-mac-greek' => 'Greek (MacGreek)', 'windows-1253' => 'Greek (Windows-1253)', 'X-MAC-HEBREW' => 'Hebrew (Macintosh)', 'windows-1255' => 'Hebrew (Windows)', 'Shift_JIS' => 'Japanese (Shift_JIS)', 'EUC-JP' => 'Japanese (EUC)', 'ISO-2022-JP' => 'Japanese (JIS)', 'EUC-KR' => 'Korean (EUC-KR)', 'gb2312' => 'Simplified Chinese (gb2312)', 'big5' => 'Traditional Chinese (big5)', 'X-MAC-THAI' => 'Thai (Macintosh)', 'Windows' => 'Thai (Windows)', 'iso-8859-5' => 'Turkish (Latin5)', 'X-MAC-TURKISH' => 'Turkish (Macintosh)', 'windows-1254' => 'Turkish (Windows)', 'utf-8' => 'UTF-8', 'iso-8859-1' => 'Western (Latin1)', 'macintosh' => 'Western (Macintosh)', 'windows-1252' => 'Western (Windows 1252)');
+?>
+
+<script language="JavaScript">
+function switchCell(n){
+	var allCells = document.all['tb'];
+	var navCells = document.all['navcell'];
+
+	if (allCells){
+	    for (var i = 0; i < allCells.length; i++){
+	        if (i != n){
+	            navCells[i].className = 'tab-off';
+	            allCells[i].style.display = 'none';
+	        } else {
+	            navCells[i].className = 'tab-on';
+	            allCells[i].style.display = 'block';
+	        }
+	    }
+	}
+}
+</script>
+
+<? if (!stristr($_SERVER['HTTP_USER_AGENT'], 'msie') and !stristr($_SERVER['HTTP_USER_AGENT'], 'opera')){ ?>
+<style>
+<!--
+.tab-content {
+	display: block;
+}
+
+.tab-on, .tab-off, .tab-none {
+	display: none;
+}
+-->
+</style>
+<? } ?>
+
+<form action="<?=$PHP_SELF; ?>" method="post">
+<table border="0" cellpading="0" cellspacing="0" width="650">
+<table id="tb_content" cellspacing="0" cellpadding="0" width="100%" border="0">
+ <tr>
+  <td class="content" valign="top">
+   <table cellspacing="0" cellpadding="0" width="100%" border="0">
+    <tr>
+     <td class="tab-on" id="navcell" onmousedown="switchCell(0)">&nbsp;<?=t('Система'); ?>
+     <td class="tab-off" id="navcell" onmousedown="switchCell(1)">&nbsp;<?=t('Новости'); ?>
+     <td class="tab-off" id="navcell" onmousedown="switchCell(2)">&nbsp;<?=t('Комментарии'); ?>
+     <td class="tab-off" id="navcell" onmousedown="switchCell(3)">&nbsp;<?=t('Пользователи'); ?>
+  	 <td class="tab-none">&nbsp;
+</table>
+
+<table class="tab-content" id="tb" cellspacing="0" cellpadding="0" width="100%" border="0" style="display: block;">
+
+<?
+    $handle = opendir(skins_directory);
+    while ($file = readdir($handle)){
+        $file_arr = explode('.', $file);
+
+        if ($file_arr[1] == 'skin'){
+            $sys_con_skins_arr[$file_arr[0]] = $file_arr[0];
+        }
+    }
+
+    $handle = opendir(languages_directory);
+    while ($file = readdir($handle)){
+        if ($file != '.' and $file != '..' and is_dir(languages_directory.'/'.$file)){
+            $sys_con_lang_arr[$file] = strtoupper($file);
+        }
+    }
+
+// System Configurations
+
+showRow(t('Полный путь к директории, где установлена Strawberry:'), t('например: http://example.com/news'), '<input type="text" name="save_con[http_script_dir]" value="'.$config['http_script_dir'].'" size="40">');
+
+showRow(t('Домашняя страница сайта:'), t('например: http://example.com/news.php'), '<input type="text" name="save_con[http_home_url]" value="'.$config['http_home_url'].'" size="40">');
+
+showRow(t('Путь к директории для загрузки картинок:'), t('например: http://example.com/news/data/upimages'), '<input type="text" name="save_con[path_image_upload]" value="'.$config['path_image_upload'].'" size="40">');
+
+showRow(t('Название сайта:'), t('например: "Strawberry homepage"'), '<input type="text" name="save_con[home_title]" value="'.$config['home_title'].'" size="40">');
+
+showRow(t('Кодировка:'), t('кодировка должна соответствовать кодировки всего сайта, так как в этой кодировке данные будут записываться в базу; учтите, смена кодировки может привести к превращению старых данных (записаных в другой кодировке) в абру-кадабру (это не относится к символам на латинице, ибо почти все, если не все, кодировки поддерживают латиницу)'), makeDropDown($sys_con_charset_arr, 'save_con[charset]', $config['charset']));
+
+//showRow(t('Кодировка базы данных:'), t('указывайте кодировку только в случае проблем с кодировкой базы MySQL; например: cp1251'), '<input type="text" name="save_con[dbcharset]" value="'.$config['dbcharset'].'" size="40">');
+
+showRow(t('mod_rewrite:'), t('если на сервере установлен mod_rewrite (спросите хостера)'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[mod_rewrite]', $config['mod_rewrite']));
+
+showRow(t('Кэширование:'), t('использование кэша снизит нагрузку на сервер (раз в десять)'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[cache]', $config['cache']));
+
+showRow(t('Скин АдминЦентра:'), t('выбирите скин для АдминЦентра'), makeDropDown($sys_con_skins_arr, 'save_con[skin]', $config['skin']));
+
+showRow(t('Язык:'), t('выбирите язык'), makeDropDown($sys_con_lang_arr, 'save_con[lang]', $config['lang']));
+
+showRow(t('E-mail администратора:'), t('e-mail на который присылать различные уведомления'), '<input type="text" name="save_con[admin_mail]" value="'.$config['admin_mail'].'" size="40">');
+
+showRow(t('Коррекция временных зон:'), t('на летнее время (плюс час) и обратно на зимнее по идеи само переходит'), makeDropDown($sys_con_gmtoffset_arr, 'save_con[gmtoffset]', $config['gmtoffset']).'<br />'.t('<small>Время на сервере: %time</small>', array('time' => langdate('d M Y - H:i'))));
+
+showRow(t('Префикс кукисов:'), t('имеется в виду cookie браузера; например: cute_'), '<input type="text" name="save_con[cookie_prefix]" value="'.$config['cookie_prefix'].'" size="40">');
+
+// News options
+?>
+
+</table>
+
+<table class="tab-content" id="tb" cellspacing="0" cellpadding="0" width="100%" border="0">
+
+<?
+showRow(t('Формат времени для новостей:'), t('<a onClick="javascript:Help(\'date\')" href="#">помощь по работе функции</a>'), '<input type="text" name="save_con[timestamp_active]" value="'.$config['timestamp_active'].'" size="40"><br />'.t('<small>Текущий формат: %format</small>', array('format' => langdate($config['timestamp_active']))));
+
+showRow(t('Групповой вывод даты:'), t('Вывод даты на несколько новостей за один день'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[date_header]', $config['date_header']), 'yes');
+
+showRow(t('Формат даты при групповом выводе:'), t('<a onClick="javascript:Help(\'date\')" href="#">помощь по работе функции</a>'), '<input type="text" name="save_con[date_headerformat]" value="'.$config['date_headerformat'].'" size="40"><br /><small>'.t('<small>Текущий формат: %format</small>', array('format' => langdate($config['date_headerformat']))));
+
+showRow(t('Уведомления о новых новостях:'), t('отсылка оповещений администратору'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[send_mail_upon_new]', $config['send_mail_upon_new']), 'yes');
+
+showRow(t('Разбивание переключения страниц на секции:'), t('если страниц больше заданого количества, они будут разбиты на сецкии; напр.: 1 2 3 ... 98 99 100; 0 = не разбивать'), '<input type="text" name="save_con[pages_break]" value="'.$config['pages_break'].'" size="10">');
+
+if ($config['pages_break']){
+	showRow(t('Количество страниц в секций:'), t('если "Разбивание переключения страниц на секции" не отключено, то данная опция позволит выставить количество страниц в секции; напр.: если поставить 4 будет 1 2 3 4 ... 97 98 99 100'), '<input type="text" name="save_con[pages_section]" value="'.$config['pages_section'].'" size="10">');
+}
+
+// Comment options
+?>
+
+</table>
+
+<table class="tab-content" id="tb" cellspacing="0" cellpadding="0" width="100%" border="0">
+
+<?
+showRow(t('Уведомления о новых комментариях:'), t('отсылка комментариев на Ваш e-mail'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[send_mail_upon_posting]', $config['send_mail_upon_posting']));
+
+showRow(t('E-mail посетителя:'), t('нужно ли просить e-mail посетителя при добавлении комментария'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[need_mail]', $config['need_mail']));
+
+//showRow(t('Использовать аякс:'), t('добавлять комментарии без перезагрузки страницы'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[cajax]', $config['cajax']));
+
+showRow(t('Комментариев на странице:'), t('сколько показывать комментариев на одной странице; 0 = не делить на страницы'), '<input type="text" name="save_con[cnumber]" value="'.$config['cnumber'].'" size="10">');
+
+showRow(t('Автоматическое разделение слова:'), t('если слово в комментарии превышает заданное число символов оно разделяется пробелом; 0 = не разделять'), '<input type="text" name="save_con[auto_wrap]" value="'.$config['auto_wrap'].'" size="10">');
+
+showRow(t('Защита от флуда:'), t('указывается в секундах; 0 = защиты нет'), '<input type="text" name="save_con[flood_time]" value="'.$config['flood_time'].'" size="10">');
+
+showRow(t('Смайлики:'), t('разделяются запятыми (<b>,</b>)'), '<input type="text"  name="save_con[smilies]" value="'.$config['smilies'].'" size="40">');
+
+showRow(t('Смайликов на одной линии:'), t('0 = все смайлики будут в одну линию'), '<input type="text"  name="save_con[smilies_line]" value="'.$config['smilies_line'].'" size="10">');
+
+showRow(t('Комментарии для зарегистрированных:'), t('"Да" - комментировать могут только зарегистрированные пользователи'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[only_registered_comment]', $config['only_registered_comment']));
+
+showRow(t('Формат времени для комментариев:'), t('<a onClick="javascript:Help(\'date\')" href="#">помощь по работе функции</a>'), '<input type="text" name="save_con[timestamp_comment]" value="'.$config['timestamp_comment'].'" size="40"><br /><small>Текущий формат: '.langdate($config['timestamp_comment']).'</small>');
+
+showRow(t('Разбивание переключения страниц комментариев на секции:'), t('если страниц больше заданого количества, они будут разбиты на сецкии; напр.: 1 2 3 ... 98 99 100; 0 = не разбивать'), '<input type="text" name="save_con[cpages_break]" value="'.$config['cpages_break'].'" size="10">');
+
+if ($config['cpages_break']){
+	showRow(t('Количество страниц в секций:'), t('если "Разбивание переключения страниц комментариев на секции" не отключено, то данная опция позволит выставить количество страниц в секции; напр.: если поставить 4 будет 1 2 3 4 ... 97 98 99 100'), '<input type="text" name="save_con[cpages_section]" value="'.$config['cpages_section'].'" size="10">');
+}
+
+// Users options
+?>
+
+</table>
+
+<table class="tab-content" id="tb" cellspacing="0" cellpadding="0" width="100%" border="0">
+
+<?
+showRow(t('Разрешить загрузку аватаров:'), t('"Да" - разрешается пользователю загружать свой аватар'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[user_avatar]', $config['user_avatar']));
+
+showRow(t('Путь к директории для загрузки аватаров:'), t('например: http://example.com/news/data/userpics'), '<input type="text" name="save_con[path_userpic_upload]" value="'.$config['path_userpic_upload'].'" size="40">');
+
+showRow(t('Папки пользовательских картинок:'), t('"Да" - каждому пользователю своя папка'), makeDropDown(array(t('Нет'), t('Да')), 'save_con[use_images_uf]', $config['use_images_uf']));
+
+showRow(t('Максимальная ширина аватара:'), t('оптимальная ширина - 100 пикс.'), '<input type="text" name="save_con[avatar_w]" value="'.$config['avatar_w'].'" size="10">');
+
+showRow(t('Максимальная высота аватара:'), t('оптимальная длина - 100 пикс.'), '<input type="text" name="save_con[avatar_h]" value="'.$config['avatar_h'].'" size="10">');
+?>
+
+</table>
+
+<input type="hidden" name="mod" value="syscon">
+<input type="hidden" name="action" value="dosavesyscon">
+<br />
+<input type="submit" value="<?=t('Сохранить'); ?>" accesskey="s">
+
+</form>
+</table>
+
+<?
+	echofooter();
+}
+
+// ********************************************************************************
+// Save System Configuration
+// ********************************************************************************
+if ($action == 'dosavesyscon'){
+    foreach ($save_con as $k => $v){
+    	if (get_magic_quotes_gpc()){
+	    	$save_con[$k] = stripslashes($save_con[$k]);
+	    }
+	}
+
+	$save_con['database']            = $config['database'];
+	$save_con['dbname']              = $config['dbname'];
+	$save_con['dbuser']              = $config['dbuser'];
+	$save_con['dbpassword']          = $config['dbpassword'];
+	$save_con['dbprefix']            = $config['dbprefix'];
+	$save_con['dbserver']            = $config['dbserver'];
+	$save_con['version_name']        = $config['version_name'];
+	$save_con['version_id']          = $config['version_id'];
+	$save_con['charset']             = strtolower($save_con['charset']);
+	$save_con['dbcharset']           = strtolower($save_con['dbcharset']);
+	$save_con['http_script_dir']     = preg_replace('/([\/]+)$/', '', $save_con['http_script_dir']);
+	$save_con['http_home_url']       = preg_replace('/([\/]+)$/', '', $save_con['http_home_url']);
+	$save_con['path_image_upload']   = preg_replace('/([\/]+)$/', '', $save_con['path_image_upload']);
+	$save_con['path_userpic_upload'] = preg_replace('/([\/]+)$/', '', $save_con['path_userpic_upload']);
+
+    save_config($save_con);
+    msg('info', t('Настройки сохранены'), t('Настройки системы были успешно сохранены.'), $PHP_SELF.'?mod=syscon');
+}
+?>

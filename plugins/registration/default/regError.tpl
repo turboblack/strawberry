@@ -1,0 +1,1 @@
+<span style="font-family:Georgia; font-size:12px; color:#FF0000">{lang.Error}:&nbsp; {lang.ErrorText}</span>

@@ -1,0 +1,112 @@
+<?php
+if (!$action){
+    echoheader('addnews', t('Добавить новость'));
+?>
+
+<form method="post" name="addnews" action="<?=$PHP_SELF; ?>" onsubmit="return process_form(this)" enctype="multipart/form-data">
+
+<!-- заголовок -->
+<fieldset id="title"><legend><?=t('Заголовок'); ?></legend>
+<input type="text" name="title">
+</fieldset>
+
+<!-- короткая -->
+<fieldset id="short"><legend><?=t('Короткая новость'); ?></legend>
+<?=run_filters('new-advanced-options', 'short'); ?>
+<textarea name="short_story"></textarea>
+</fieldset>
+
+<!-- полная -->
+<fieldset id="full"><legend><?=t('Полная новость'); ?></legend>
+<?=run_filters('new-advanced-options', 'full'); ?>
+<textarea name="full_story"></textarea>
+</fieldset>
+
+<!-- кнопки -->
+<fieldset id="actions"><legend><?=t('Действие'); ?></legend>
+<input type="submit" value="<?=t('Добавить'); ?>" accesskey="s">
+<input type="button" onclick="preview('addnews');" value="<?=t('Предварительный просмотр'); ?>" accesskey="p">
+</fieldset>
+
+<fieldset id="options"><legend><?=t('Настройки'); ?></legend><div>
+<?=run_actions('new-advanced-options'); ?>
+</div></fieldset>
+
+<input type="hidden" name="mod" value="addnews">
+<input type="hidden" name="action" value="doaddnews">
+</form>
+
+<?
+    echofooter();
+}
+
+// ********************************************************************************
+// Do add News to DB
+// ********************************************************************************
+if ($action == 'doaddnews'){
+    if (($added_time = strtotime($day.' '.$month.' '.$year.' '.$hour.':'.$minute.':'.$second)) == -1){
+    	$added_time = time;
+    }
+
+	if (!$title){
+	    $title = substr($short_story, 0, 10).'...';
+	}
+
+    $id = $sql->last_insert_id('news', '', 'id') + 1;
+
+    run_actions('new-save-entry');
+
+	$sql->insert(array(
+	'table'  => 'news',
+	'values' => array(
+	            'date'     => $added_time,
+	            'author'   => $member['username'],
+	            'title'    => replace_news('add', $title),
+	            'short'    => strlen(replace_news('add', $short_story)),
+	            'full'     => strlen(replace_news('add', $full_story)),
+	            'category' => $category,
+	            'url'      => ($url ? namespace($url) : namespace(totranslit($title))),
+	            'hidden'   => cute_get_rights('approve_news')
+	            )
+	));
+
+	$sql->insert(array(
+	'table'  => 'story',
+	'values' => array(
+				'post_id' => $id,
+	            'short'   => replace_news('add', $short_story),
+	            'full'    => replace_news('add', $full_story)
+	            )
+	));
+
+	run_actions('new-save-entry');
+
+	foreach($sql->select(array('table' => 'users')) as $row){
+	    $sql->update(array(
+	    'table'  => 'users',
+	    'where'  => array("username = $member[username]"),
+	    'values' => array('publications' => sizeof($sql->select(array('table' => 'news', 'where' => array("author = $member[username]")))))
+	    ));
+	}
+
+
+	if ($config['send_mail_upon_new'] and $config['admin_mail']){
+        ob_start();
+        include mails_directory.'/new_post.tpl';
+        $tpl['body'] = ob_get_clean();
+
+        preg_match('/Subject:(.*)/i', $tpl['body'], $tpl['subject']);
+        preg_match('/Attachment:(.*)/i', $tpl['body'], $tpl['attachment']);
+
+        $tpl['body']       = preg_replace('/Subject:(.*)/i', '', $tpl['body']);
+        $tpl['body']       = preg_replace('/Attachment:(.*)/i', '', $tpl['body']);
+        $tpl['body']       = trim($tpl['body']);
+        $tpl['subject']    = trim($tpl['subject'][1]);
+        $tpl['attachment'] = trim($tpl['attachment'][1]);
+
+        cute_mail($config['admin_mail'], $tpl['subject'], $tpl['body'], $tpl['attachment']);
+	}
+
+    msg('info', t('Новость добавлена'), t('Новость "%title" была успешно добавлена<br /><br /><a href="%url">Отредактировать новость</a>', array('title' => $title, 'url' => $PHP_SELF.'?mod=editnews&amp;id='.$id)));
+}
+?>

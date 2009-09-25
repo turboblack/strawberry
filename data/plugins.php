@@ -1,0 +1,30 @@
+<?
+$array = array (
+  'custom-quick-tags.php' => true,
+  'subscribe-to-comments.php' => true,
+  'etc.php' => true,
+  'format-switcher.php' => true,
+  'trackback.php' => true,
+  'insert-tags.php' => true,
+  'post-type.php' => true,
+  'ago.php' => true,
+  'add-to-bookmark.php' => true,
+  'eval.php' => true,
+  'keywords.php' => true,
+  'tepmplate-for-news.php' => true,
+  'spam.php' => true,
+  'lj-crosspost.php' => true,
+  'enable-disable-comments.php' => true,
+  'registration.php' => true,
+  'xfields.php' => true,
+  'baners.php' => true,
+  'watermark.php' => true,
+  'prev-next-links.php' => true,
+  'adepto-fastload.php' => true,
+  'ddb.php' => true,
+  'emoticons-manager.php' => true,
+  'rating.php' => true,
+  'wacko.php' => true,
+);
+
+?>

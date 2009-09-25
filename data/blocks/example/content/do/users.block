@@ -1,0 +1,8 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим список юзерей (аддон)
+// show list of the users (add-on)
+include rootpath.'/show_users.php';
+?>

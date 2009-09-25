@@ -1,0 +1,10 @@
+<!-- главное меню -->
+
+<ul>
+<li><a href="/example/" id="main">Главная</a></li>
+<li><a href="/example/?do=category" id="category">Категории</a></li>
+<li><a href="/example/?do=keywords" id="keywords">Кейворды</a></li>
+<li><a href="/example/?do=archives" id="archives">Архивы</a></li>
+<li><a href="/example/?do=search" id="search">Поиск</a></li>
+<li><a href="/example/?do=map" id="map">Карта сайта</a></li>
+</ul>

@@ -1,0 +1,144 @@
+<?php
+// ********************************************************************************
+// Options
+// ********************************************************************************
+$options = array(
+            array(
+            'name'     => t('Личные настройки'),
+            'url'      => 'mod=personal',
+            'category' => 'users'
+            ),
+
+            array(
+            'name'     => t('Блокировка IP'),
+            'url'      => 'mod=ipban',
+            'category' => 'tools'
+            ),
+
+            array(
+            'name'     => t('Настройка системы'),
+            'url'      => 'mod=syscon',
+            'category' => 'options'
+            ),
+
+            array(
+            'name'     => t('Шаблоны'),
+            'url'      => 'mod=templates',
+            'category' => 'templates'
+            ),
+
+            array(
+            'name'     => t('Пользователи'),
+            'url'      => 'mod=editusers',
+            'category' => 'users'
+            ),
+
+            array(
+            'name'     => t('Управление картинками'),
+            'url'      => 'mod=images',
+            'category' => 'files'
+            ),
+
+            array(
+            'name'     => t('Категории'),
+            'url'      => 'mod=categories',
+            'category' => 'tools'
+            ),
+
+            array(
+            'name'     => t('Поиск и замена'),
+            'url'      => 'mod=snr',
+            'category' => 'tools'
+            ),
+
+            array(
+            'name'     => t('Плагины'),
+            'url'      => 'mod=plugins',
+            'category' => 'options'
+            ),
+
+            array(
+            'name'     => t('Резервное копирование'),
+            'url'      => 'mod=backup',
+            'category' => 'tools'
+            ),
+
+            array(
+            'name'     => t('Добавить новость'),
+            'url'      => 'mod=addnews',
+            'category' => 'news'
+            ),
+
+            array(
+            'name'     => t('Редактировать новость'),
+            'url'      => 'mod=editnews',
+            'category' => 'news'
+            ),
+
+            array(
+            'name'     => t('Статистика'),
+            'url'      => 'mod=main',
+            'category' => 'tools'
+            ),
+
+            array(
+            'name'     => t('Группы пользователей'),
+            'url'      => 'mod=usergroups',
+            'category' => 'users'
+            ),
+
+            array(
+            'name'     => t('Импорт'),
+            'url'      => 'mod=import',
+            'category' => 'tools'
+            ),
+           );
+
+$options = run_filters('options', $options);
+
+if (!function_exists('cmp_sort_sections')){
+	function cmp_sort_sections ($a, $b) {
+	    if ($a == $b){
+	    	return 0;
+	    }
+
+		return ($a > $b ? -1 : 1);
+	}
+}
+
+for ($i = 0; $i < count($options); $i++){
+    $file = explode('=', $options[$i]['url']);
+    $file = explode('&', $file[1]);
+    $file = $file[0];
+
+    if (cute_get_rights($file, 'read')){
+    	$sections[$options[$i]['category']][$options[$i]['name']] = $options[$i];
+    }
+}
+
+uasort($sections, 'cmp_sort_sections');
+
+echoheader('options', t('Настройки'));
+
+$i = 0;
+
+foreach ($sections as $k => $section){
+	$i++;
+
+	asort($section);
+	echo '<table style="float: left;width: 30%;margin: 2px;" class="'.($i%2 == 0 ? 'enabled' : 'disabled').'">';
+
+	foreach ($section as $option){
+?>
+
+<tr>
+<td title="<?=$option['category']; ?>" style="padding: 2px;"><a href="<?=$PHP_SELF.'?'.$option['url']; ?>"><?=$option['name']; ?></a>
+
+<?
+	}
+
+	echo '</table>';
+}
+
+echofooter();
+?>

@@ -1,0 +1,22 @@
+<!-- только сегодня и только... -->
+<!-- демонрстация сортировки, не более -->
+
+<b>5 самых читаемых</b>
+<ul>
+<?
+$static['number']   = '5';
+$static['sort']     = array('views', 'DESC');
+$static['template'] = 'Headlines';
+include rootpath.'/show_news.php';
+?>
+</ul>
+
+<b>5 самых комментируемых</b>
+<ul>
+<?
+$static['number']   = '5';
+$static['sort']     = array('comments', 'DESC');
+$static['template'] = 'Headlines';
+include rootpath.'/show_news.php';
+?>
+</ul>

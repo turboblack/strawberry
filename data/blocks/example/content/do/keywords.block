@@ -1,0 +1,8 @@
+<!-- шурум-бурум -->
+<!-- вывод основного контента -->
+
+<?
+// выводим список кейвордов (плагин Keywords)
+// show list of the keywords (plugin Keywords)
+echo cn_keywords();
+?>

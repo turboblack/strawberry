@@ -1,0 +1,230 @@
+<?php
+function chmod_check($dir = '.', $check = false){
+
+	$handle = opendir($dir);
+	while ($file = readdir($handle)){
+		if ($file != '.' and $file != '..' and is_dir($dir.'/'.$file)){
+			$files[] = $file;
+        }
+	}
+
+	$handle = opendir($dir);
+	while ($file = readdir($handle)){
+		if ($file != '.' and $file != '..' and is_file($dir.'/'.$file)){
+			$files[] = $file;
+        }
+	}
+
+    if ($files){
+    	if ($check){
+    		return true;
+    	}
+
+    	echo '<ul style="margin: 0;margin-left: 10px;list-style-type: none;">';
+
+	    foreach ($files as $k => $v){
+	    	$name  = totranslit($dir.'/'.$v);
+	    	$chmod = ' <small>(CHMOD: <b>'.(@decoct(@fileperms($dir.'/'.$v)) % 1000).'</b>)</small>';
+	    	$plmin = makePlusMinus($name).' ';
+
+	    	if (is_dir($dir.'/'.$v)){
+	            echo '<li '.cute_that().' style="padding: 5px;">'.(chmod_check($dir.'/'.$v, true) ? $plmin : '').$v.$chmod;
+	            echo '<ul id="'.$name.'" style="margin: 0;margin-left: 10px;display: none;list-style-type: none;">';
+	            chmod_check($dir.'/'.$v);
+	            echo '</ul>';
+	        } else {
+	        	echo '<li style="padding: 5px;">'.$v.$chmod;
+	        }
+	    }
+
+	    echo '</ul>';
+	}
+}
+
+echoheader('home', t('Добро пожаловать'));
+
+// Some Stats
+$todaynews      = 0;
+$count_my_news  = 0;
+$count_new_news = 0;
+$stats_news     = $sql->table_count('news');
+$stats_users    = $sql->table_count('users');
+$count_comments = $sql->table_count('comments');
+
+// Define Welcome Message
+?>
+
+<table border="0" cellpading="0" cellspacing="0" width="654">
+ <tr>
+  <td width="650" colspan="5" height="1">&nbsp;
+
+<?
+//----------------------------------
+// Do we have enough free space ?
+//----------------------------------
+$dfs = @disk_free_space('./');
+
+if ($dfs and $dfs < 10240){
+	$freespace = formatsize($dfs);
+?>
+
+<tr>
+ <td class="panel" colspan="5" height="1"><?=t('<b>Внимание!</b><br />Системой обнаружено, что на сервере мало свободного места - <b>%free_space</b>. Вам необходимо предпринять меры по увеличению дискового пространства для нормальной работы скрипта. Также необходимо сделать <a href="%url">резервную копию</a> базы новостей!', array('free_space' => $freespace, 'url' => $PHP_SELF.'?mod=backup')); ?>
+<tr>
+ <td>&nbsp;
+
+<?
+}
+
+//----------------------------------
+// Are we using SafeSkin ?
+//----------------------------------
+if ($using_safe_skin){
+?>
+
+<tr>
+ <td class="panel" colspan="5" height="1"><?=t('<b>Внимание!</b><br />Невозможно загрузить выбранный в настройках шаблон <b>%skin</b>. Автоматически загружен шаблон по умолчанию!<br />Проверьте наличие файлов шаблона на сервере!', array('skin' => $config['skin'])); ?>
+<tr>
+ <td>&nbsp;
+
+<?
+}
+
+//----------------------------------
+// Is our PHP version old ?
+//----------------------------------
+if ($phpversion and $phpversion < '4.2.0'){
+?>
+
+<tr>
+ <td class="panel" colspan="5" height="1"><?=s('<b>Внимание!</b><br />Версия php-интерпретатора, установленная на сервере, слишком старая (%version). Свяжитесь с администрацией хостинга для обновления версии php! Скачать последнюю версию можно на <a href="http://php.net/" target="_blank">официальном сайте</a>.', array('version' => $phpversion)); ?>
+<tr>
+ <td>&nbsp;
+
+<?
+}
+
+// Show Some stats
+$image_upload        = end($image_upload = explode('/', $config['path_image_upload']));
+$userpic_upload      = end($userpic_upload = explode('/', $config['path_userpic_upload']));
+$user_images_folder  = cute_parse_url($config['path_image_upload']);
+$user_images_folder  = $user_images_folder['abs'];
+$user_userpic_folder = cute_parse_url($config['path_userpic_upload']);
+$user_userpic_folder = $user_userpic_folder['abs'];
+$data_folder         = end($data_folder = explode('/', data_directory));
+$cache_folder        = end($cache_folder = explode('/', cache_directory));
+$backup_folder       = end($backup_folder = explode('/', backup_directory));
+$lang_folder         = end($lang_folder = explode('/', languages_directory));
+$languages_directory = languages_directory.'/'.$config['lang'];
+
+$test = array(
+        //data_directory       => $data_folder,
+        cache_directory      => $cache_folder,
+        backup_directory     => $backup_folder,
+        $user_images_folder  => $image_upload,
+        $user_userpic_folder => $userpic_upload,
+        $languages_directory => $lang_folder.'/'.$config['lang']
+        );
+
+$stat = array(
+        'users'      => array('title' => t('пользователей')),
+        'news'       => array('select' => 'id', 'title' => t('новостей')),
+        'comments'   => array('title' => t('комментариев')),
+        'categories' => array('select' => 'id', 'title' => t('категорий')),
+        );
+
+// Check the table size
+$arr_size = array('users', 'news', 'story', 'comments', 'categories');
+
+if ($config['database'] == 'txtsql'){
+    foreach ($arr_size as $table){
+        $size[$table] = filesize(data_directory.'/db/base/'.$table.'.MYD');
+    }
+} else {
+    foreach ($arr_size as $table){
+        $query = mysql_query('show table status like \''.$config['dbprefix'].$table.'\'');
+        while ($row = mysql_fetch_assoc($query)){
+            $size[$table] = $row['Data_length'];
+
+            if ($row['Data_free'] > 0){
+                $results = mysql_query('optimize table '.$row['Name']);
+            }
+        }
+    }
+}
+
+$size['news'] = ($size['story'] + $size['news']);
+?>
+
+<tr>
+ <td>
+  <table width="600" border="0" cellspacing="0" cellpadding="0">
+   <tr>
+    <td class="panel" width="220">&nbsp;<b><?=t('Статистика'); ?></b>
+    <td width="60">&nbsp;
+    <td class="panel" width="220">&nbsp;<b><?=t('Проверка системы'); ?></b> <small>(<a href="<?=$PHP_SELF; ?>?action=chmod"><?=t('вся'); ?></a>)</small>
+   <tr>
+    <td>
+     <table width="100%" border="0" cellspacing="0" cellpadding="0">
+
+<?
+foreach ($stat as $k => $v){
+?>
+
+<tr>
+ <td><?=t('Всего'); ?> <?=$v['title']; ?>
+ <td><?=count($sql->select(array('table' => $k, 'select' => array(($v['select'] ? $v['select'] : 'date'))))); ?> (<small><?=formatsize($size[$k]); ?></small>)
+
+<?
+}
+?>
+
+</table>
+<td>&nbsp;
+<td>
+ <table width="100%" border="0" cellspacing="0" cellpadding="0">
+
+<?
+foreach ($test as $k => $v){
+?>
+
+<tr>
+ <td><?=t('Есть доступ к папке'); ?> <?=$v; ?>
+ <td><font color="<?=(is_writable($k) ? 'green' : 'red'); ?>"><?=(is_writable($k) ? t('Да') : t('Нет')); ?></font>
+
+<?
+}
+?>
+
+</table>
+ <tr>
+  <td colspan="3" align="center"><br /><br />
+
+<div align="left">
+<?
+if ($action == 'chmod'){
+    chmod_check();
+}
+?>
+</div>
+
+<?
+if ($action == 'check'){
+?>
+
+<?=t('Используется версия <b>%current_version</b>, последняя версия <b>%new_version</b>', array('current_version' => $config['version_id'], 'new_version' => '<script language="JavaScript" src="http://strawberry.goodgirl.ru/check.php?version='.$config['version_id'].'"></script>')); ?>
+
+<?
+} else {
+?>
+
+<a href="<?=$PHP_SELF; ?>?action=check"><?=t('Проверить наличие новой версии'); ?></a>
+
+<?
+}
+?>
+
+</table>
+</table>
+
+<? echofooter(); ?>
