@@ -7,7 +7,7 @@
 error_reporting(E_ALL & ~E_NOTICE);
 
 $vars    = array('skip', 'page', 'cpage', 'action', 'id', 'ucat', 'category', 'number', 'template', 'static', 'year', 'month', 'day', 'title', 'sort', 'user', 'author', 'time', 'link', 'tpl');
-$default = array('cutepath' => dirname(__FILE__), 'phpversion' => @phpversion(), 'HTTP_REFERER' => $_SERVER['HTTP_REFERER'], 'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'], 'PHP_SELF' => $_SERVER['PHP_SELF'], 'QUERY_STRING' => $_SERVER['QUERY_STRING'], 'is_logged_in' => false, 'cache_uniq' => 0, 'config' => array(), 'categories' => array(), 'users' => array(), 'usergroups' => array(), 'member' => array(), 'tpl' => array(), 'post' => array(), 'gettext' => array(), 'version_name' => 'Strawberry', 'version_id' => '1.1.2');
+$default = array('cutepath' => dirname(__FILE__), 'phpversion' => @phpversion(), 'HTTP_REFERER' => $_SERVER['HTTP_REFERER'], 'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'], 'PHP_SELF' => $_SERVER['PHP_SELF'], 'QUERY_STRING' => $_SERVER['QUERY_STRING'], 'is_logged_in' => false, 'cache_uniq' => 0, 'config' => array(), 'categories' => array(), 'users' => array(), 'usergroups' => array(), 'member' => array(), 'tpl' => array(), 'post' => array(), 'gettext' => array(), 'version_name' => 'Strawberry', 'version_id' => '1.1.3');
 
 foreach ($vars as $k){
 	if ($_POST[$k]){

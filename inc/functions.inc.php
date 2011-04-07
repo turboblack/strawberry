@@ -1025,7 +1025,7 @@ return strtr($string, $trans_tbl);
  * @param string $str
  * @return string
  */
-function namespace($str){
+function nmspace($str){
 global $sql, $mod;
 
 	foreach ($sql->select(array('table' => 'news')) as $row){

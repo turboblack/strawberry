@@ -121,7 +121,7 @@ global $id, $added_time, $title, $short_story, $category, $mod;
 	            'short'    => strlen(replace_news('add', $short_story)),
 	            'full'     => strlen(replace_news('add', $full_story)),
 	            'category' => $category,
-	            'url'      => ($url ? namespace($url) : namespace(totranslit($title))),
+	            'url'      => ($url ? nmspace($url) : nmspace(totranslit($title))),
 	            'hidden'   => cute_get_rights('approve_news')
 	            )
 	));
@@ -259,7 +259,7 @@ global $id, $added_time, $title, $short_story, $category, $mod;
 	            'short'    => strlen(replace_news('add', $short_story)),
 	            'full'     => strlen(replace_news('add', $full_story)),
 	            'category' => $category,
-	            'url'      => ($url ? namespace($url) : namespace(totranslit($title))),
+	            'url'      => ($url ? nmspace($url) : nmspace(totranslit($title))),
 	            'hidden'   => cute_get_rights('approve_news')
 	            )
 	));

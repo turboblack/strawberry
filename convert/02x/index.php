@@ -173,7 +173,7 @@ if ($_GET['action'] == 'news'){
 					'avatar'   => $fo_arr[5],
 					'views'    => $counter[$fo_arr[0]],
 					'category' => $fo_arr[6],
-					'url'      => ($fo_arr[7] ? namespace($fo_arr[7]) : namespace(totranslit($fo_arr[2], $that)))
+					'url'      => ($fo_arr[7] ? nmspace($fo_arr[7]) : nmspace(totranslit($fo_arr[2], $that)))
 					)
 		));
 
