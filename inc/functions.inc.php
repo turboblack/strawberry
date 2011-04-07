@@ -486,11 +486,11 @@ function chmoddir($dir, $mod){
 	$handle = opendir($dir);
 	while (false !== ($file = readdir($handle))){
 	    if ($file != '.' and $file !== '..'){
-	        if (is_file($file)){
-	            chmod($dir.'/'.$file, $mod);
-	        } else {
-	            chmod($dir.'/'.$file, $mod);
-	            chmoddir($dir.'/'.$file, $mod);
+	        if (is_file($file = $dir.'/'.$file)){
+	            chmod($file, $mod);
+	        } elseif (is_dir($file)){
+	            chmod($file, $mod);
+	            chmoddir($file, $mod);
 	        }
 	    }
 	}
